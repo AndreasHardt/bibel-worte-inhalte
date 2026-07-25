@@ -1,0 +1,74 @@
+name: OneDrive-Zugriff testen
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-onedrive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: OneDrive-Freigaben prüfen
+        shell: bash
+        env:
+          STATUS_URL: ${{ secrets.ONEDRIVE_STATUS_SHARE_URL }}
+          ARTICLES_URL: ${{ secrets.ONEDRIVE_ARTICLES_SHARE_URL }}
+        run: |
+          set -Eeuo pipefail
+
+          test_download() {
+            local label="$1"
+            local url="$2"
+            local output="/tmp/${label}.download"
+            local separator="?"
+
+            if [[ -z "$url" ]]; then
+              echo "::error::Das Secret für ${label} fehlt."
+              return 1
+            fi
+
+            if [[ "$url" == *"?"* ]]; then
+              separator="&"
+            fi
+
+            echo "Prüfe ${label} ..."
+            curl \
+              --location \
+              --fail \
+              --silent \
+              --show-error \
+              --retry 2 \
+              --max-time 120 \
+              --user-agent "Mozilla/5.0" \
+              --output "$output" \
+              "${url}${separator}download=1"
+
+            local bytes
+            local mime
+            bytes="$(stat -c '%s' "$output")"
+            mime="$(file -b --mime-type "$output")"
+            echo "${label}: ${bytes} Bytes, Dateityp ${mime}"
+
+            if unzip -tqq "$output" >/dev/null 2>&1; then
+              echo "${label}: Ordner wurde erfolgreich als ZIP-Datei abgerufen."
+              return 0
+            fi
+
+            echo "::warning::${label} wurde nicht als ZIP-Datei geliefert."
+            return 1
+          }
+
+          failed=0
+          test_download "Statusbilder" "$STATUS_URL" || failed=1
+          test_download "Artikel" "$ARTICLES_URL" || failed=1
+
+          if [[ "$failed" -ne 0 ]]; then
+            echo "::error::Mindestens ein OneDrive-Ordner konnte nicht automatisch abgerufen werden."
+            exit 1
+          fi
+
+          echo "Beide OneDrive-Ordner können automatisch gelesen werden."
