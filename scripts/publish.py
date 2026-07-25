@@ -2,13 +2,14 @@
 """Publish due Bibel-Worte packages from a private input checkout.
 
 Input convention:
-  inhalte/YYMMDD Thema.docx
+  inhalte/YYMMDD Thema.md (preferred) or .docx
   inhalte/YYMMDD Thema DEU.jpg
   inhalte/YYMMDD Thema ENG.jpg
   inhalte/YYMMDD Thema FR.jpg
 
-The DOCX contains the fixed DEU/ENG/FR headings used by the Bibel-Worte
-multilingual template. The six-digit filename prefix is authoritative for the
+The content file contains the fixed DEU/ENG/FR headings used by the Bibel-Worte
+multilingual template. Markdown is preferred when both formats exist for the
+same topic and date. The six-digit filename prefix is authoritative for the
 release date. Documents dated after the cutoff are ignored. Existing published
 items remain in the manifest and due items with the same Thema-ID are replaced.
 """
@@ -69,7 +70,10 @@ LANGUAGES = {
     },
 }
 
-DATE_PREFIX = re.compile(r"^(?P<date>\d{6})\s+(?P<topic>.+)\.docx$", re.IGNORECASE)
+DATE_PREFIX = re.compile(
+    r"^(?P<date>\d{6})\s+(?P<topic>.+)\.(?:docx|md)$",
+    re.IGNORECASE,
+)
 META_PATTERN = re.compile(
     r"Thema-ID:\s*(?P<theme>.*?)\s*·\s*"
     r"Freigabedatum:\s*(?P<date>\d{2}\.\d{2}\.\d{4})\s*·\s*"
@@ -125,6 +129,61 @@ def nonempty_paragraphs(document: Document) -> list[dict[str, str]]:
     ]
 
 
+def markdown_paragraphs(path: Path) -> list[dict[str, str]]:
+    """Read the small, controlled Markdown subset used by Bibel-Worte."""
+    paragraphs: list[dict[str, str]] = []
+    plain_lines: list[str] = []
+    quote_lines: list[str] = []
+
+    def flush_plain() -> None:
+        if plain_lines:
+            paragraphs.append(
+                {"text": " ".join(plain_lines).strip(), "style": "Normal"}
+            )
+            plain_lines.clear()
+
+    def flush_quote() -> None:
+        if quote_lines:
+            paragraphs.append(
+                {"text": "\n".join(quote_lines).strip(), "style": "BW Bible Quote"}
+            )
+            quote_lines.clear()
+
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        raise PublishError(f"Inhaltsdatei kann nicht gelesen werden: {path}") from exc
+
+    for raw_line in lines:
+        line = raw_line.strip()
+        if not line:
+            flush_plain()
+            flush_quote()
+            continue
+
+        heading = re.match(r"^(#{1,6})\s+(.+?)\s*#*$", line)
+        if heading:
+            flush_plain()
+            flush_quote()
+            level = len(heading.group(1))
+            paragraphs.append(
+                {"text": heading.group(2).strip(), "style": f"Heading {level}"}
+            )
+            continue
+
+        if line.startswith(">"):
+            flush_plain()
+            quote_lines.append(line[1:].strip())
+            continue
+
+        flush_quote()
+        plain_lines.append(line)
+
+    flush_plain()
+    flush_quote()
+    return [paragraph for paragraph in paragraphs if paragraph["text"]]
+
+
 def parse_metadata(paragraphs: list[dict[str, str]], source: SourceDocument) -> dict[str, str]:
     for paragraph in paragraphs:
         match = META_PATTERN.search(paragraph["text"])
@@ -132,7 +191,7 @@ def parse_metadata(paragraphs: list[dict[str, str]], source: SourceDocument) -> 
             metadata_date = datetime.strptime(match.group("date"), "%d.%m.%Y").date()
             if metadata_date != source.release_date:
                 print(
-                    "::warning::Das Freigabedatum in der Word-Datei "
+                    "::warning::Das Freigabedatum in der Inhaltsdatei "
                     f"({metadata_date.isoformat()}) weicht vom Dateinamen "
                     f"({source.release_date.isoformat()}) ab. Verwendet wird der Dateiname."
                 )
@@ -238,7 +297,10 @@ def parse_language(
 
 
 def parse_document(source: SourceDocument) -> dict[str, Any]:
-    paragraphs = nonempty_paragraphs(Document(source.path))
+    if source.path.suffix.lower() == ".md":
+        paragraphs = markdown_paragraphs(source.path)
+    else:
+        paragraphs = nonempty_paragraphs(Document(source.path))
     metadata = parse_metadata(paragraphs, source)
 
     language_positions: dict[str, int] = {}
@@ -318,18 +380,33 @@ def load_manifest(path: Path) -> dict[str, Any]:
 
 def discover_due_documents(input_dir: Path, cutoff: date) -> dict[str, tuple[SourceDocument, dict[str, Any]]]:
     latest: dict[str, tuple[SourceDocument, dict[str, Any]]] = {}
-    documents = sorted(input_dir.rglob("*.docx"))
+    documents = sorted(
+        [*input_dir.rglob("*.docx"), *input_dir.rglob("*.md")],
+        key=lambda path: path.as_posix().lower(),
+    )
     for path in documents:
         source = parse_filename(path)
         if source is None:
-            print(f"::notice::Ignoriere Word-Datei ohne Datumspräfix: {path.name}")
+            print(f"::notice::Ignoriere Inhaltsdatei ohne Datumspräfix: {path.name}")
             continue
         if source.release_date > cutoff:
             print(f"Später vorgesehen, noch nicht veröffentlicht: {path.name}")
             continue
         item = parse_document(source)
         current = latest.get(item["id"])
-        if current is None or current[0].release_date < source.release_date:
+        candidate_rank = (
+            source.release_date,
+            1 if source.path.suffix.lower() == ".md" else 0,
+        )
+        current_rank = (
+            (
+                current[0].release_date,
+                1 if current[0].path.suffix.lower() == ".md" else 0,
+            )
+            if current is not None
+            else None
+        )
+        if current_rank is None or current_rank < candidate_rank:
             latest[item["id"]] = (source, item)
     return latest
 
