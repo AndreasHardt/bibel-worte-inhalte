@@ -7,10 +7,14 @@ Das öffentliche Repository übernimmt fällige Inhalte aus dem privaten Reposit
 
 Pro Thema liegen im Ordner `inhalte` genau vier Dateien:
 
-- `YYMMDD Thema.docx`
+- `YYMMDD Thema.md`
 - `YYMMDD Thema DEU.jpg`
 - `YYMMDD Thema ENG.jpg`
 - `YYMMDD Thema FR.jpg`
+
+Vorhandene Word-Dateien (`.docx`) werden weiterhin unterstützt. Wenn für
+dasselbe Thema und Datum sowohl eine Markdown- als auch eine Word-Datei
+vorhanden ist, verwendet die Automatik die Markdown-Datei.
 
 Die sechs Ziffern am Anfang sind das Freigabedatum. Der Dateiname ist für die
 Automatik maßgeblich. Dateien mit einem späteren Datum werden noch nicht
