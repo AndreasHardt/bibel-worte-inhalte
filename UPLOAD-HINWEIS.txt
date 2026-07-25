@@ -1,0 +1,20 @@
+BIBEL-WORTE – GITHUB-UPLOAD
+
+Dieses Paket gehört in das öffentliche Repository:
+AndreasHardt/bibel-worte-inhalte
+
+Nach dem Entpacken müssen diese Dateien mit ihren Ordnern im Repository liegen:
+
+.github/workflows/publish.yml
+scripts/publish.py
+scripts/requirements.txt
+VEROEFFENTLICHUNG.md
+
+Wichtig:
+Im Repository wird anschließend noch das Secret INPUT_REPO_TOKEN benötigt.
+Der darin gespeicherte GitHub-Zugangsschlüssel erhält ausschließlich Leserechte
+für das private Repository AndreasHardt/bibel-worte-eingang.
+
+Danach kann der Ablauf unter Actions > Bibel-Worte veröffentlichen mit
+„Run workflow“ manuell gestartet werden. Zusätzlich läuft er samstags um
+18:00 Uhr in der Zeitzone Europe/Berlin.
