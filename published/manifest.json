@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-25T22:42:05.747379+02:00",
+  "generatedAt": "2026-07-25T23:39:05.523075+02:00",
   "items": [
     {
       "id": "fischschwarm",
@@ -8,7 +8,7 @@
       "releaseDate": "2026-07-25",
       "releasePrefix": "260725",
       "author": "Andreas Hardt",
-      "sourceDocument": "260725 Fischschwarm.docx",
+      "sourceDocument": "260725 Fischschwarm.md",
       "languages": {
         "de": {
           "keyword": "Fischschwarm",
@@ -100,8 +100,8 @@
           "downloadName": "260725 Fischschwarm DEU.jpg"
         },
         "en": {
-          "keyword": "School of Fish",
-          "title": "School of Fish",
+          "keyword": "school of fish",
+          "title": "school of fish",
           "bibleReference": "Revelation 7:9",
           "bibleText": "“…lo, a great crowd, which no one could number, out of every nation…”",
           "shortDescription": "A large school of fish helps us imagine how overwhelming the countless multitude of the redeemed will be. Yet no one is overlooked in that multitude: each person is known by God and saved through Jesus Christ.",
@@ -189,8 +189,8 @@
           "downloadName": "260725 Fischschwarm ENG.jpg"
         },
         "fr": {
-          "keyword": "Banc de poissons",
-          "title": "Banc de poissons",
+          "keyword": "bancs de poissons",
+          "title": "bancs de poissons",
           "bibleReference": "Apocalypse 7,9",
           "bibleText": "« …voici, une grande foule que personne ne pouvait dénombrer, de toute nation… »",
           "shortDescription": "Un grand banc de poissons nous donne une idée de l’immensité de la foule innombrable des rachetés. Pourtant, dans cette multitude, personne n’est oublié : chacun est connu de Dieu et sauvé par Jésus Christ.",
@@ -273,7 +273,7 @@
               "text": "Lorsque tu verras un grand banc de poissons, souviens-toi de ceci : le nombre des rachetés ne sera pas petit. Une foule innombrable louera un jour Dieu et l’Agneau pour son salut. Dieu désire aussi te voir parmi ceux qui sont sauvés."
             }
           ],
-          "slug": "banc-de-poissons",
+          "slug": "bancs-de-poissons",
           "imagePath": "published/statusbilder/fischschwarm/260725 Fischschwarm FR.jpg",
           "downloadName": "260725 Fischschwarm FR.jpg"
         }
