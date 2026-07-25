@@ -48,7 +48,7 @@ jobs:
       - name: Änderungen veröffentlichen
         shell: bash
         run: |
-          if git diff --quiet -- published; then
+          if [[ -z "$(git status --porcelain -- published)" ]]; then
             echo "Keine Änderungen zu veröffentlichen."
             exit 0
           fi
