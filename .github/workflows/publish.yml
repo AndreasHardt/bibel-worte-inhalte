@@ -1,0 +1,60 @@
+name: Bibel-Worte veröffentlichen
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 18 * * 6"
+      timezone: "Europe/Berlin"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bibel-worte-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Öffentliches Inhalts-Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Privaten Eingangsordner lesen
+        uses: actions/checkout@v4
+        with:
+          repository: AndreasHardt/bibel-worte-eingang
+          token: ${{ secrets.INPUT_REPO_TOKEN }}
+          path: _input
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Abhängigkeiten installieren
+        run: pip install -r scripts/requirements.txt
+
+      - name: Fällige Inhalte verarbeiten
+        run: >-
+          python scripts/publish.py
+          --input _input/inhalte
+          --output published
+          --manifest published/manifest.json
+
+      - name: Änderungen veröffentlichen
+        shell: bash
+        run: |
+          if git diff --quiet -- published; then
+            echo "Keine Änderungen zu veröffentlichen."
+            exit 0
+          fi
+
+          git config user.name "Bibel-Worte Automatik"
+          git config user.email "bibel@hardt-wiehl.de"
+          git add published
+          git commit -m "Inhalte automatisch veröffentlichen"
+          git push
